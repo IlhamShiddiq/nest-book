@@ -1,60 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuid_v4 } from 'uuid';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Book, BookDocument } from 'src/schemas/book.schema';
 
 @Injectable()
 export class BooksService {
-  private books: any[] = [];
+  constructor (@InjectModel(Book.name) private BookModel: Model<BookDocument>) {}
 
-  getAllBooks() {
-    return this.books;
+  async getAllBooks() {
+    return await this.BookModel.find({}).exec()
   }
 
-  findBookById(id: string) {
-    return this.books[this.findBookIndexById(id)];
-  }
-
-  findBookIndexById(id: string) {
-    const bookIndex = this.books.findIndex((book) => book.id == id);
-
-    if (bookIndex === -1) {
-      throw new NotFoundException('Book is not found!');
-    }
-
-    return bookIndex;
+  async findBookById(id: string) {
+    return await this.BookModel.findById(id).exec()
   }
 
   createBook(payload: any) {
-    const { title, author, category } = payload;
-
-    this.books.push({
-      id: uuid_v4(),
-      title,
-      author,
-      category,
-    });
-
-    return 'success';
+    const newBook = new this.BookModel(payload)
+    return newBook.save()
   }
 
-  editBookById(id: string, payload: any) {
-    const { title, author, category } = payload;
-    const bookIndex = this.findBookIndexById(id);
-
-    this.books[bookIndex] = {
-      ...this.books[bookIndex],
-      title,
-      author,
-      category,
-    };
-
-    return 'success';
+  async editBookById(id: string, payload: any) {
+    return await this.BookModel.findByIdAndUpdate(id, payload).exec()
   }
 
-  deleteBookById(id: string) {
-    const bookIndex = this.findBookIndexById(id);
-
-    this.books.splice(bookIndex, 1);
-
-    return 'success';
+  async deleteBookById(id: string) {
+    return await this.BookModel.findByIdAndRemove(id)
   }
 }
